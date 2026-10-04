@@ -29,7 +29,7 @@ export default function SEOHead({
   type = 'website',
 }: SEOHeadProps) {
   const location = useLocation();
-  const domain = 'https://unitflow.org';
+  const domain = 'https://unitconversionhub.com';
   const currentPath = canonicalPath || location.pathname;
   const canonicalUrl = `${domain}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
 

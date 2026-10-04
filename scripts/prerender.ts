@@ -31,6 +31,33 @@ function buildRouteMetadata(): RouteMeta[] {
 
   // Category Pages
   for (const cat of categories) {
+    const catUnits = units.filter((u) => u.categoryId === cat.id);
+    const catPairs = conversionPairs.filter((p) => p.categoryId === cat.id);
+
+    const unitsListHtml = catUnits
+      .map((u) => `<li><strong>${u.name} (${u.symbol})</strong> — ${u.system ? u.system.toUpperCase() : 'Standard'} unit</li>`)
+      .join('');
+
+    const pairLinksHtml = catPairs
+      .slice(0, 10)
+      .map((p) => {
+        const f = getUnitById(p.fromId);
+        const t = getUnitById(p.toId);
+        return f && t ? `<li><a href="/convert/${p.slug}" style="color: #2563eb; font-weight: 600;">${f.name} to ${t.name} (${f.symbol} to ${t.symbol})</a></li>` : '';
+      })
+      .join('');
+
+    const bodyHtml = `
+      <div style="max-width: 1000px; margin: 0 auto; padding: 20px; font-family: system-ui, -apple-system, sans-serif;">
+        <h1 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 10px;">${cat.name} Converter</h1>
+        <p style="color: #4b5563; margin-bottom: 24px;">${cat.description}</p>
+        <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 24px;">Popular ${cat.name} Conversions</h2>
+        <ul style="margin-top: 10px; margin-bottom: 30px; line-height: 1.8;">${pairLinksHtml}</ul>
+        <h2 style="font-size: 1.25rem; font-weight: 700;">Supported ${cat.name} Measurement Units</h2>
+        <ul style="margin-top: 10px; line-height: 1.8;">${unitsListHtml}</ul>
+      </div>
+    `;
+
     routes.push({
       route: `/${cat.slug}`,
       title: `${cat.name} Converter — Fast & Free Calculator | UnitConversionHub`,
@@ -40,6 +67,7 @@ function buildRouteMetadata(): RouteMeta[] {
         { name: 'Home', url: '/' },
         { name: `${cat.name} Converter`, url: `/${cat.slug}` },
       ],
+      bodyHtml,
     });
   }
 
@@ -126,10 +154,20 @@ function prerender() {
     process.exit(1);
   }
 
-  const templateHtml = fs.readFileSync(templatePath, 'utf-8');
+  let templateHtml = fs.readFileSync(templatePath, 'utf-8');
   const routes = buildRouteMetadata();
 
   console.log(`[SEO PRERENDER] Starting pre-rendering for ${routes.length} routes...`);
+
+  // Strip default fallback meta description / social tags from template before route injection
+  templateHtml = templateHtml
+    .replace(/<meta name="description".*?>/gs, '')
+    .replace(/<meta property="og:title".*?>/gs, '')
+    .replace(/<meta property="og:description".*?>/gs, '')
+    .replace(/<meta property="og:type".*?>/gs, '')
+    .replace(/<meta name="twitter:card".*?>/gs, '')
+    .replace(/<meta name="twitter:title".*?>/gs, '')
+    .replace(/<meta name="twitter:description".*?>/gs, '');
 
   let generatedCount = 0;
 
